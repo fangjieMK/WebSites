@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的 - 好房</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .profile-header {
+      padding: 40px 0;
+      background: var(--gradient-primary);
+      color: white;
+    }
+    .profile-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      border: 4px solid rgba(255,255,255,0.3);
+    }
+    .profile-name {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      background: white;
+      padding: 8px;
+      border-radius: var(--radius-lg);
+      margin-top: -30px;
+      box-shadow: var(--shadow-md);
+    }
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .tab.active {
+      background: var(--gradient-primary);
+      color: white;
+    }
+    .tab-content { margin-top: 40px; }
+    .list-item {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .item-image {
+      width: 160px;
+      height: 120px;
+      background-size: cover;
+      background-position: center;
+      border-radius: var(--radius-md);
+    }
+    .item-content { flex: 1; }
+    .item-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .item-price { font-size: 22px; font-weight: 700; background: var(--gradient-secondary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .item-actions { display: flex; gap: 8px; align-items: flex-start; }
+    .btn-sm { padding: 8px 16px; font-size: 14px; }
+    .empty-state {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-size: 64px; margin-bottom: 16px; }
+    .status-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 12px;
+      margin-left: 12px;
+    }
+    .status-available { background: #dcfce7; color: #16a34a; }
+    .status-rented { background: #fee2e2; color: #dc2626; }
+    @media (max-width: 640px) {
+      .list-item { flex-direction: column; }
+      .item-image { width: 100%; height: 200px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-header">
+    <div class="container">
+      <div class="profile-info" id="profileInfo"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="tabs">
+      <div class="tab active" data-tab="properties">我的房源</div>
+      <div class="tab" data-tab="requests">我的求租</div>
+      <div class="tab" data-tab="favorites">我的收藏</div>
+    </div>
+
+    <div class="tab-content" id="tabContent"></div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let currentTab = 'properties';
+    const user = Storage.get('user');
+
+    function renderProfile() {
+      document.getElementById('profileInfo').innerHTML = `
+        <div class="profile-avatar" style="background-image: url('${user.avatar}')"></div>
+        <div>
+          <div class="profile-name">${user.name}</div>
+          <div style="opacity: 0.8;">${user.phone}</div>
+        </div>
+      `;
+    }
+
+    function renderMyProperties() {
+      const properties = Storage.get('properties', []).filter(p => p.userId === user.id);
+      const container = document.getElementById('tabContent');
+      
+      if (properties.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🏠</div>
+            <p>还没有发布房源</p>
+            <a href="publish.html" class="btn btn-primary" style="margin-top: 16px;">发布房源</a>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = properties.map(p => `
+        <div class="card list-item">
+          <div class="item-image" style="background-image: url('${p.images[0]}')"></div>
+          <div class="item-content">
+            <div class="item-title">
+              ${p.title}
+              <span class="status-tag ${p.status === 'available' ? 'status-available' : 'status-rented'}">
+                ${p.status === 'available' ? '可租' : '已租'}
+              </span>
+            </div>
+            <div class="item-price">${formatPrice(p.price)}</div>
+            <p style="color: var(--text-muted); margin-top: 8px;">${p.location}</p>
+          </div>
+          <div class="item-actions">
+            ${p.status === 'available' ? `<button class="btn btn-sm" onclick="markRented('${p.id}')">标记已租</button>` : ''}
+            <button class="btn btn-sm" style="background: #fee2e2; color: #dc2626;" onclick="deleteProperty('${p.id}')">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderMyRequests() {
+      const requests = Storage.get('requests', []).filter(r => r.userId === user.id);
+      const container = document.getElementById('tabContent');
+      
+      if (requests.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>还没有发布求租需求</p>
+            <a href="request.html" class="btn btn-secondary" style="margin-top: 16px;">发布求租</a>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = requests.map(r => `
+        <div class="card list-item">
+          <div class="item-content" style="flex: 1;">
+            <div class="item-title">${r.location} · ${r.rooms}室</div>
+            <div class="item-price">¥${r.budget.min} - ¥${r.budget.max}/月</div>
+            <p style="color: var(--text-muted); margin-top: 8px;">${r.description}</p>
+            <p style="margin-top: 8px;">${r.preferences.map(p => '#' + p).join(' ')}</p>
+          </div>
+          <div class="item-actions">
+            <button class="btn btn-sm" style="background: #fee2e2; color: #dc2626;" onclick="deleteRequest('${r.id}')">删除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderFavorites() {
+      const properties = Storage.get('properties', []);
+      const favorites = properties.filter(p => user.favorites.includes(p.id));
+      const container = document.getElementById('tabContent');
+      
+      if (favorites.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❤️</div>
+            <p>还没有收藏房源</p>
+            <a href="index.html" class="btn btn-primary" style="margin-top: 16px;">去逛逛</a>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = favorites.map(p => `
+        <a href="detail.html?id=${p.id}" class="card list-item" style="display: flex; color: inherit;">
+          <div class="item-image" style="background-image: url('${p.images[0]}')"></div>
+          <div class="item-content">
+            <div class="item-title">${p.title}</div>
+            <div class="item-price">${formatPrice(p.price)}</div>
+            <p style="color: var(--text-muted); margin-top: 8px;">${p.location}</p>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    function markRented(id) {
+      const properties = Storage.get('properties', []);
+      const p = properties.find(prop => prop.id === id);
+      if (p) {
+        p.status = 'rented';
+        Storage.set('properties', properties);
+        renderMyProperties();
+      }
+    }
+
+    function deleteProperty(id) {
+      if (confirm('确定要删除这个房源吗？')) {
+        const properties = Storage.get('properties', []).filter(p => p.id !== id);
+        Storage.set('properties', properties);
+        renderMyProperties();
+      }
+    }
+
+    function deleteRequest(id) {
+      if (confirm('确定要删除这个求租需求吗？')) {
+        const requests = Storage.get('requests', []).filter(r => r.id !== id);
+        Storage.set('requests', requests);
+        renderMyRequests();
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      if (tab === 'properties') renderMyProperties();
+      else if (tab === 'requests') renderMyRequests();
+      else if (tab === 'favorites') renderFavorites();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderProfile();
+      renderMyProperties();
+      
+      document.querySelectorAll('.tab').forEach(t => {
+        t.addEventListener('click', () => switchTab(t.dataset.tab));
+      });
+    });
+  </script>
+</body>
+</html>
