@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发布房源 - 好房</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .page-header {
+      padding: 40px 0;
+      text-align: center;
+    }
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+    .step.active { color: var(--text-primary); }
+    .step.active .step-number {
+      background: var(--gradient-primary);
+      color: white;
+    }
+    .form-card {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+    .form-group { margin-bottom: 24px; }
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    textarea.form-input { min-height: 120px; resize: vertical; }
+    .upload-area {
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .upload-area:hover { border-color: #667eea; }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .preview-img {
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+      border-radius: var(--radius-sm);
+    }
+    .facilities-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .facility-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+    .facility-check.selected {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 32px;
+    }
+    .preview-card {
+      padding: 24px;
+      background: #f8fafc;
+      border-radius: var(--radius-md);
+    }
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+      .facilities-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <div class="container">
+      <h1 style="font-size: 32px; margin-bottom: 24px;">发布房源</h1>
+      <div class="steps">
+        <div class="step active" data-step="1">
+          <div class="step-number">1</div>
+          <div>基本信息</div>
+        </div>
+        <div class="step" data-step="2">
+          <div class="step-number">2</div>
+          <div>上传图片</div>
+        </div>
+        <div class="step" data-step="3">
+          <div class="step-number">3</div>
+          <div>详细描述</div>
+        </div>
+        <div class="step" data-step="4">
+          <div class="step-number">4</div>
+          <div>确认发布</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card form-card">
+      <form id="publishForm">
+        <div class="step-content" id="step1">
+          <div class="form-group">
+            <label class="form-label">房源标题</label>
+            <input type="text" class="form-input" id="title" placeholder="例如：朝阳CBD 精装一居室">
+          </div>
+          <div class="form-group">
+            <label class="form-label">详细地址</label>
+            <input type="text" class="form-input" id="location" placeholder="例如：北京市朝阳区建国路88号">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">月租金 (元)</label>
+              <input type="number" class="form-input" id="price" placeholder="5500">
+            </div>
+            <div class="form-group">
+              <label class="form-label">户型 (几室)</label>
+              <input type="number" class="form-input" id="rooms" placeholder="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">面积 (㎡)</label>
+            <input type="number" class="form-input" id="area" placeholder="55">
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-primary" onclick="nextStep()">下一步</button>
+          </div>
+        </div>
+
+        <div class="step-content" id="step2" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">房源图片</label>
+            <div class="upload-area" id="uploadArea">
+              <div style="font-size: 48px;">📷</div>
+              <p style="margin-top: 12px;">点击或拖拽上传图片</p>
+              <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+            </div>
+            <div class="preview-grid" id="previewGrid"></div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" onclick="prevStep()">上一步</button>
+            <button type="button" class="btn btn-primary" onclick="nextStep()">下一步</button>
+          </div>
+        </div>
+
+        <div class="step-content" id="step3" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">房源描述</label>
+            <textarea class="form-input" id="description" placeholder="请详细描述您的房源..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">配套设施</label>
+            <div class="facilities-grid" id="facilitiesGrid">
+              <div class="facility-check" data-facility="空调">
+                <input type="checkbox"> 空调
+              </div>
+              <div class="facility-check" data-facility="洗衣机">
+                <input type="checkbox"> 洗衣机
+              </div>
+              <div class="facility-check" data-facility="冰箱">
+                <input type="checkbox"> 冰箱
+              </div>
+              <div class="facility-check" data-facility="WiFi">
+                <input type="checkbox"> WiFi
+              </div>
+              <div class="facility-check" data-facility="独立卫生间">
+                <input type="checkbox"> 独立卫生间
+              </div>
+              <div class="facility-check" data-facility="天然气">
+                <input type="checkbox"> 天然气
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">联系人</label>
+            <input type="text" class="form-input" id="contactName" placeholder="您的姓名">
+          </div>
+          <div class="form-group">
+            <label class="form-label">联系电话</label>
+            <input type="text" class="form-input" id="contactPhone" placeholder="您的手机号">
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn" onclick="prevStep()">上一步</button>
+            <button type="button" class="btn btn-primary" onclick="nextStep()">下一步</button>
+          </div>
+        </div>
+
+        <div class="step-content" id="step4" style="display: none;">
+          <h3 style="margin-bottom: 24px;">预览房源</h3>
+          <div class="preview-card" id="previewCard"></div>
+          <div class="form-actions">
+            <button type="button" class="btn" onclick="prevStep()">上一步</button>
+            <button type="button" class="btn btn-secondary" onclick="submitForm()">发布房源</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let currentStep = 1;
+    let formData = {
+      images: [
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800'
+      ]
+    };
+
+    function updateSteps() {
+      document.querySelectorAll('.step').forEach(s => {
+        s.classList.toggle('active', parseInt(s.dataset.step) <= currentStep);
+      });
+      document.querySelectorAll('.step-content').forEach(c => {
+        c.style.display = 'none';
+      });
+      document.getElementById('step' + currentStep).style.display = 'block';
+    }
+
+    function nextStep() {
+      if (currentStep < 4) {
+        saveStepData();
+        currentStep++;
+        updateSteps();
+        if (currentStep === 4) renderPreview();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 1) {
+        currentStep--;
+        updateSteps();
+      }
+    }
+
+    function saveStepData() {
+      if (currentStep === 1) {
+        formData.title = document.getElementById('title').value;
+        formData.location = document.getElementById('location').value;
+        formData.price = parseInt(document.getElementById('price').value);
+        formData.rooms = parseInt(document.getElementById('rooms').value);
+        formData.area = parseInt(document.getElementById('area').value);
+      } else if (currentStep === 3) {
+        formData.description = document.getElementById('description').value;
+        formData.facilities = [];
+        document.querySelectorAll('.facility-check.selected').forEach(f => {
+          formData.facilities.push(f.dataset.facility);
+        });
+        formData.contactName = document.getElementById('contactName').value;
+        formData.contactPhone = document.getElementById('contactPhone').value;
+      }
+    }
+
+    function renderPreview() {
+      document.getElementById('previewCard').innerHTML = `
+        <div style="display: grid; grid-template-columns: 200px 1fr; gap: 20px; margin-bottom: 20px;">
+          <div style="height: 150px; background-size: cover; background-position: center; border-radius: 8px; background-image: url('${formData.images[0]}')"></div>
+          <div>
+            <h3 style="margin-bottom: 8px;">${formData.title || '未填写'}</h3>
+            <p style="font-size: 24px; font-weight: 700; background: var(--gradient-secondary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${formData.price ? '¥' + formData.price + '/月' : '未填写'}</p>
+            <p style="color: var(--text-muted);">${formData.rooms}室 · ${formData.area}㎡ · ${formData.location || '未填写'}</p>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary);">${formData.description || '未填写描述'}</p>
+        <div style="margin-top: 16px;">${formData.facilities?.map(f => '#' + f).join(' ') || ''}</div>
+      `;
+    }
+
+    function submitForm() {
+      saveStepData();
+      const user = Storage.get('user');
+      const newProperty = {
+        id: generateId(),
+        title: formData.title,
+        location: formData.location,
+        price: formData.price,
+        rooms: formData.rooms,
+        area: formData.area,
+        images: formData.images,
+        description: formData.description,
+        facilities: formData.facilities,
+        contact: { name: formData.contactName, phone: formData.contactPhone },
+        status: 'available',
+        createdAt: new Date(),
+        userId: user.id
+      };
+      const properties = Storage.get('properties', []);
+      properties.unshift(newProperty);
+      Storage.set('properties', properties);
+      alert('发布成功！');
+      window.location.href = 'profile.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateSteps();
+      
+      document.getElementById('uploadArea').addEventListener('click', () => {
+        document.getElementById('fileInput').click();
+      });
+      
+      document.querySelectorAll('.facility-check').forEach(check => {
+        check.addEventListener('click', () => {
+          check.classList.toggle('selected');
+        });
+      });
+    });
+  </script>
+</body>
+</html>

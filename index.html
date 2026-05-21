@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>好房 - 找到你的理想家</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero {
+      background: var(--gradient-primary);
+      padding: 80px 0;
+      color: white;
+    }
+    .hero-content {
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 20px;
+      opacity: 0.9;
+      margin-bottom: 40px;
+    }
+    .search-box {
+      display: flex;
+      gap: 12px;
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      padding: 12px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+    }
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      padding: 0 12px;
+    }
+    .filter-tags {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+    .filter-tag {
+      padding: 8px 20px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 100px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .filter-tag:hover, .filter-tag.active {
+      background: rgba(255,255,255,0.4);
+    }
+    .section {
+      padding: 64px 0;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+    .section-title {
+      font-size: 28px;
+    }
+    .properties-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .property-card {
+      overflow: hidden;
+    }
+    .property-image {
+      height: 200px;
+      background-size: cover;
+      background-position: center;
+    }
+    .property-info {
+      padding: 20px;
+    }
+    .property-price {
+      font-size: 24px;
+      font-weight: 700;
+      background: var(--gradient-secondary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background: text;
+      margin-bottom: 8px;
+    }
+    .property-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .property-meta {
+      display: flex;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .requests-scroll {
+      display: flex;
+      gap: 20px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+    }
+    .request-card {
+      min-width: 320px;
+      padding: 24px;
+    }
+    .request-budget {
+      font-size: 22px;
+      font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background: text;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 968px) {
+      .properties-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 32px; }
+      .properties-grid { grid-template-columns: 1fr; }
+      .search-box { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1>找到你的理想家</h1>
+        <p>海量真实房源，轻松租房</p>
+        <div class="search-box">
+          <input type="text" class="search-input" id="searchInput" placeholder="输入位置或小区名称...">
+          <button class="btn btn-primary" id="searchBtn">搜索</button>
+        </div>
+        <div class="filter-tags">
+          <span class="filter-tag active" data-filter="all">全部</span>
+          <span class="filter-tag" data-filter="1">一居室</span>
+          <span class="filter-tag" data-filter="2">二居室</span>
+          <span class="filter-tag" data-filter="3">三居室+</span>
+          <span class="filter-tag" data-filter="low">¥5000以下</span>
+          <span class="filter-tag" data-filter="high">¥8000以上</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">热门房源</h2>
+        <a href="publish.html" class="btn btn-secondary">发布房源</a>
+      </div>
+      <div class="properties-grid" id="propertiesGrid">
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background: #fff;">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">最新求租</h2>
+        <a href="request.html" class="btn btn-primary">发布求租</a>
+      </div>
+      <div class="requests-scroll" id="requestsScroll">
+      </div>
+    </div>
+  </section>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let currentFilter = 'all';
+
+    function renderProperties(filter = 'all') {
+      const properties = Storage.get('properties', []);
+      let filtered = properties.filter(p => p.status === 'available');
+      
+      if (filter === '1') filtered = filtered.filter(p => p.rooms === 1);
+      else if (filter === '2') filtered = filtered.filter(p => p.rooms === 2);
+      else if (filter === '3') filtered = filtered.filter(p => p.rooms >= 3);
+      else if (filter === 'low') filtered = filtered.filter(p => p.price < 5000);
+      else if (filter === 'high') filtered = filtered.filter(p => p.price > 8000);
+      
+      const grid = document.getElementById('propertiesGrid');
+      grid.innerHTML = filtered.map(p => `
+        <a href="detail.html?id=${p.id}" class="card property-card">
+          <div class="property-image" style="background-image: url('${p.images[0]}')"></div>
+          <div class="property-info">
+            <div class="property-price">${formatPrice(p.price)}</div>
+            <div class="property-title">${p.title}</div>
+            <div class="property-meta">
+              <span>${p.rooms}室</span>
+              <span>${p.area}㎡</span>
+              <span>${p.location}</span>
+            </div>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    function renderRequests() {
+      const requests = Storage.get('requests', []);
+      const scroll = document.getElementById('requestsScroll');
+      scroll.innerHTML = requests.map(r => `
+        <div class="card request-card">
+          <div class="request-budget">¥${r.budget.min} - ¥${r.budget.max}/月</div>
+          <h3 style="margin-bottom: 12px;">${r.location} · ${r.rooms}室</h3>
+          <p style="color: var(--text-secondary); font-size: 14px;">${r.description}</p>
+          <div style="margin-top: 16px; color: var(--text-muted); font-size: 13px;">
+            ${r.preferences.map(p => '#' + p).join(' ')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderProperties();
+      renderRequests();
+      
+      document.querySelectorAll('.filter-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+          document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+          tag.classList.add('active');
+          currentFilter = tag.dataset.filter;
+          renderProperties(currentFilter);
+        });
+      });
+      
+      document.getElementById('searchBtn').addEventListener('click', () => {
+        const keyword = document.getElementById('searchInput').value.toLowerCase();
+        const properties = Storage.get('properties', []);
+        const filtered = properties.filter(p => 
+          p.status === 'available' && 
+          (p.title.toLowerCase().includes(keyword) || p.location.toLowerCase().includes(keyword))
+        );
+        const grid = document.getElementById('propertiesGrid');
+        grid.innerHTML = filtered.map(p => `
+          <a href="detail.html?id=${p.id}" class="card property-card">
+            <div class="property-image" style="background-image: url('${p.images[0]}')"></div>
+            <div class="property-info">
+              <div class="property-price">${formatPrice(p.price)}</div>
+              <div class="property-title">${p.title}</div>
+              <div class="property-meta">
+                <span>${p.rooms}室</span>
+                <span>${p.area}㎡</span>
+                <span>${p.location}</span>
+              </div>
+            </div>
+          </a>
+        `).join('');
+      });
+    });
+  </script>
+</body>
+</html>

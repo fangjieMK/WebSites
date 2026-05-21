@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发布求租 - 好房</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .page-header {
+      padding: 40px 0;
+      text-align: center;
+      background: var(--gradient-secondary);
+      color: white;
+    }
+    .page-header h1 { font-size: 32px; }
+    .form-card {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 40px;
+    }
+    .form-group { margin-bottom: 24px; }
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: #f5576c; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    textarea.form-input { min-height: 120px; resize: vertical; }
+    .preferences-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .pref-tag {
+      padding: 10px 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 100px;
+      cursor: pointer;
+    }
+    .pref-tag.selected {
+      border-color: #f5576c;
+      background: #fff1f3;
+    }
+    .match-tip {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 24px;
+    }
+    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <div class="container">
+      <h1>发布求租需求</h1>
+      <p style="opacity: 0.9; margin-top: 8px;">让房东找到你</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card form-card">
+      <div class="match-tip">
+        💡 发布后，系统会自动为您匹配合适的房源
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">期望位置</label>
+        <input type="text" class="form-input" id="reqLocation" placeholder="例如：朝阳区、海淀区">
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">预算最低 (元/月)</label>
+          <input type="number" class="form-input" id="reqMin" placeholder="4000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">预算最高 (元/月)</label>
+          <input type="number" class="form-input" id="reqMax" placeholder="6000">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">期望户型</label>
+        <input type="number" class="form-input" id="reqRooms" placeholder="1">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">其他偏好 (可多选)</label>
+        <div class="preferences-grid">
+          <span class="pref-tag" data-pref="地铁旁">地铁旁</span>
+          <span class="pref-tag" data-pref="朝南">朝南</span>
+          <span class="pref-tag" data-pref="独立卫生间">独立卫生间</span>
+          <span class="pref-tag" data-pref="精装修">精装修</span>
+          <span class="pref-tag" data-pref="可养宠物">可养宠物</span>
+          <span class="pref-tag" data-pref="有车位">有车位</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">补充描述</label>
+        <textarea class="form-input" id="reqDesc" placeholder="描述一下您的情况和要求..."></textarea>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">您的称呼</label>
+          <input type="text" class="form-input" id="reqName" placeholder="您的姓名">
+        </div>
+        <div class="form-group">
+          <label class="form-label">联系电话</label>
+          <input type="text" class="form-input" id="reqPhone" placeholder="您的手机号">
+        </div>
+      </div>
+      
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 16px;" id="submitReq">发布求租</button>
+    </div>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let selectedPrefs = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.pref-tag').forEach(tag => {
+        tag.addEventListener('click', () => {
+          tag.classList.toggle('selected');
+          const pref = tag.dataset.pref;
+          const idx = selectedPrefs.indexOf(pref);
+          if (idx > -1) selectedPrefs.splice(idx, 1);
+          else selectedPrefs.push(pref);
+        });
+      });
+
+      document.getElementById('submitReq').addEventListener('click', () => {
+        const user = Storage.get('user');
+        const newRequest = {
+          id: generateId(),
+          budget: {
+            min: parseInt(document.getElementById('reqMin').value),
+            max: parseInt(document.getElementById('reqMax').value)
+          },
+          location: document.getElementById('reqLocation').value,
+          rooms: parseInt(document.getElementById('reqRooms').value),
+          preferences: selectedPrefs,
+          description: document.getElementById('reqDesc').value,
+          contact: {
+            name: document.getElementById('reqName').value,
+            phone: document.getElementById('reqPhone').value
+          },
+          createdAt: new Date(),
+          userId: user.id
+        };
+        
+        const requests = Storage.get('requests', []);
+        requests.unshift(newRequest);
+        Storage.set('requests', requests);
+        alert('发布成功！');
+        window.location.href = 'profile.html';
+      });
+    });
+  </script>
+</body>
+</html>
